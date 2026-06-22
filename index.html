@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>График дежурств</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app-wrapper">
+      <header class="app-header">
+        <h1>График дежурств</h1>
+      </header>
+
+      <main class="app-main">
+        <section class="calendar-card">
+          <div class="calendar-nav">
+            <button id="btn-prev" class="btn-icon" aria-label="Предыдущий месяц">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <h2 id="calendar-title" class="calendar-title">Месяц Год</h2>
+            <button id="btn-next" class="btn-icon" aria-label="Следующий месяц">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+
+          <div class="weekdays-grid">
+            <div>Пн</div>
+            <div>Вт</div>
+            <div>Ср</div>
+            <div>Чт</div>
+            <div>Пт</div>
+            <div class="weekend-label">Сб</div>
+            <div class="weekend-label">Вс</div>
+          </div>
+
+          <div id="days-grid" class="days-grid"></div>
+
+          <div class="calendar-actions">
+            <button id="btn-today" class="btn btn-secondary">Сегодня</button>
+            <button id="btn-clear" class="btn btn-danger">Очистить месяц</button>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="form-group">
+            <label for="shift-rate">Стоимость одной смены (₽):</label>
+            <input type="number" id="shift-rate" min="0" step="100" inputmode="numeric" />
+          </div>
+        </section>
+      </main>
+
+      <footer class="stats-panel">
+        <div class="stats-summary">
+          <div class="stats-item">
+            <span class="stats-label">Отработано</span>
+            <span id="stat-days" class="stats-value">0</span>
+            <span class="stats-unit">дней</span>
+          </div>
+          <div class="stats-item primary">
+            <span class="stats-label">Заработано</span>
+            <span id="stat-earnings" class="stats-value">0 ₽</span>
+          </div>
+        </div>
+
+        <details class="stats-details">
+          <summary class="details-summary">Показать список дат</summary>
+          <div class="details-content">
+            <ul id="selected-dates-list" class="dates-list"></ul>
+          </div>
+        </details>
+      </footer>
+    </div>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
