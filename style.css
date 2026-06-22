@@ -19,12 +19,12 @@
     --transition: all 0.2s ease-in-out;
 }
 
-/* Базовые сбросы для мобильных устройств */
+/* Базовые сбросы */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    -webkit-tap-highlight-color: transparent; /* Убирает синюю подсветку клика на iOS */
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -32,7 +32,8 @@ body {
     background-color: var(--bg-app);
     color: var(--text-main);
     line-height: 1.5;
-    padding-bottom: 180px; /* Отступ под фиксированную нижнюю панель */
+    /* Увеличен отступ, чтобы нижняя панель на Android ничего не перекрывала */
+    padding-bottom: 240px; 
 }
 
 .app-wrapper {
@@ -48,7 +49,7 @@ body {
 }
 
 .app-header h1 {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 5vw, 1.5rem);
     font-weight: 700;
     color: var(--text-main);
 }
@@ -57,7 +58,7 @@ body {
 .calendar-card, .settings-card {
     background: var(--surface);
     border-radius: var(--radius-lg);
-    padding: 16px;
+    padding: clamp(12px, 3vw, 16px); /* Адаптивный внутренний отступ */
     box-shadow: var(--shadow);
     margin-bottom: 16px;
     animation: fadeIn 0.4s ease-out;
@@ -72,9 +73,11 @@ body {
 }
 
 .calendar-title {
-    font-size: 1.2rem;
+    font-size: clamp(1.1rem, 4.5vw, 1.3rem);
     font-weight: 600;
     text-transform: capitalize;
+    text-align: center;
+    flex-grow: 1;
 }
 
 /* Кнопки управления */
@@ -82,7 +85,7 @@ body {
     background: var(--bg-app);
     border: none;
     width: 44px;
-    height: 44px;
+    min-height: 44px;
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -90,6 +93,7 @@ body {
     color: var(--text-main);
     cursor: pointer;
     transition: var(--transition);
+    flex-shrink: 0;
 }
 
 .btn-icon:active {
@@ -102,12 +106,12 @@ body {
 .weekdays-grid, .days-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
+    gap: clamp(2px, 1.5vw, 8px); /* Уменьшенный зазор для Xiaomi экранов */
     text-align: center;
 }
 
 .weekdays-grid {
-    font-size: 0.85rem;
+    font-size: clamp(0.75rem, 3vw, 0.85rem);
     font-weight: 600;
     color: var(--text-muted);
     margin-bottom: 10px;
@@ -119,12 +123,14 @@ body {
 
 /* Ячейки дней */
 .calendar-day {
-    aspect-ratio: 1;
+    /* Заменили жесткий aspect-ratio на гибкий padding для Android */
+    padding: clamp(8px, 2.5vw, 12px) 2px;
+    min-height: 44px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: clamp(0.9rem, 4vw, 1.1rem); /* Авто-уменьшение цифр */
     font-weight: 500;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -132,7 +138,7 @@ body {
     transition: var(--transition);
     position: relative;
     background: var(--bg-app);
-    min-height: 44px; /* Идеально для тача */
+    word-break: keep-all;
 }
 
 .calendar-day:active {
@@ -154,7 +160,7 @@ body {
     font-weight: 700;
 }
 
-/* Анимированное состояние выбранного рабочего дня */
+/* Выбранный рабочий день */
 .calendar-day.worked {
     background: var(--success) !important;
     color: white !important;
@@ -162,7 +168,6 @@ body {
     animation: popIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Дополнительная точка внутри рабочего дня */
 .calendar-day.worked::after {
     content: '';
     position: absolute;
@@ -178,17 +183,24 @@ body {
     display: flex;
     gap: 10px;
     margin-top: 16px;
+    flex-wrap: wrap; /* Защита от наложения */
 }
 
 .btn {
     flex: 1;
-    height: 44px;
+    min-width: 130px; /* Защита от слишком сильного сжатия */
+    min-height: 44px;
+    padding: 10px;
     border: none;
     border-radius: var(--radius-md);
-    font-size: 0.95rem;
+    font-size: clamp(0.85rem, 3.5vw, 0.95rem);
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
 }
 
 .btn:active {
@@ -213,21 +225,22 @@ body {
 }
 
 .form-group label {
-    font-size: 0.9rem;
+    font-size: clamp(0.85rem, 3.5vw, 0.9rem);
     font-weight: 600;
     color: var(--text-muted);
 }
 
 .form-group input {
-    height: 48px;
+    min-height: 48px; /* min-height вместо height */
     border: 2px solid var(--bg-app);
     border-radius: var(--radius-md);
-    padding: 0 16px;
+    padding: 10px 16px;
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--text-main);
     outline: none;
     transition: var(--transition);
+    width: 100%;
 }
 
 .form-group input:focus {
@@ -244,7 +257,7 @@ body {
     box-shadow: 0 -8px 24px rgb(0 0 0 / 0.08);
     border-top-left-radius: var(--radius-lg);
     border-top-right-radius: var(--radius-lg);
-    padding: 16px;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); /* Учет челки/жестов на Android/iOS */
     max-width: 500px;
     margin: 0 auto;
     z-index: 100;
@@ -254,6 +267,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Позволяет блокам перенестись, если текст слишком крупный */
+    gap: 12px;
 }
 
 .stats-item {
@@ -269,7 +284,7 @@ body {
 }
 
 .stats-value {
-    font-size: 1.3rem;
+    font-size: clamp(1.1rem, 5vw, 1.3rem);
     font-weight: 700;
 }
 
@@ -281,8 +296,9 @@ body {
 }
 
 .stats-item.primary .stats-value {
-    font-size: 1.6rem;
+    font-size: clamp(1.3rem, 6vw, 1.6rem); /* Защита суммы от вылезания за края */
     color: var(--success);
+    word-break: break-word;
 }
 
 /* Спойлер детализации */
@@ -293,18 +309,20 @@ body {
 }
 
 .details-summary {
-    font-size: 0.9rem;
+    font-size: clamp(0.85rem, 3.5vw, 0.9rem);
     color: var(--primary);
     cursor: pointer;
     font-weight: 600;
     outline: none;
-    padding: 4px 0;
+    padding: 8px 0;
+    user-select: none;
 }
 
 .details-content {
-    max-height: 120px;
+    max-height: 140px;
     overflow-y: auto;
     margin-top: 8px;
+    padding-right: 4px; /* Место под скроллбар */
 }
 
 .dates-list {
@@ -317,8 +335,9 @@ body {
 .dates-list li {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9rem;
-    padding: 6px 8px;
+    align-items: center;
+    font-size: clamp(0.8rem, 3.5vw, 0.9rem);
+    padding: 8px;
     background: var(--bg-app);
     border-radius: 6px;
 }
