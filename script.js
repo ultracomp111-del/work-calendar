@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Состояние приложения
     let state = {
-        currentDate: new Date(), // Текущий просматриваемый месяц/год
-        shiftRate: 2000,         // Стоимость смены по умолчанию
-        workedDays: []           // Массив строк дат в формате 'YYYY-MM-DD'
+        currentDate: new Date(),
+        shiftRate: 2000,
+        shifts: {} // Храним даты в виде объекта: { 'YYYY-MM-DD': 'upcoming' | 'worked' }
     };
 
     // DOM Элементы
@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnToday = document.getElementById('btn-today');
     const inputShiftRate = document.getElementById('shift-rate');
     
-    const statDays = document.getElementById('stat-days');
+    const statWorked = document.getElementById('stat-worked');
+    const statUpcoming = document.getElementById('stat-upcoming');
     const statEarnings = document.getElementById('stat-earnings');
     const selectedDatesList = document.getElementById('selected-dates-list');
 
@@ -38,19 +39,34 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    // Загрузка данных
+    // Загрузка данных и миграция старых версий
     function loadFromLocalStorage() {
         const storedRate = localStorage.getItem('duty_shift_rate');
-        const storedDays = localStorage.getItem('duty_worked_days');
+        const storedShifts = localStorage.getItem('duty_shifts_v2'); // Новый ключ
+        const legacyDays = localStorage.getItem('duty_worked_days'); // Старый ключ
         
         if (storedRate !== null) state.shiftRate = parseInt(storedRate);
-        if (storedDays !== null) state.workedDays = JSON.parse(storedDays);
+        
+        if (storedShifts !== null) {
+            state.shifts = JSON.parse(storedShifts);
+        } else if (legacyDays !== null) {
+            // МИГРАЦИЯ: Если пользователь обновил приложение, сохраняем его старые дни как "отработанные"
+            try {
+                const parsedLegacy = JSON.parse(legacyDays);
+                if (Array.isArray(parsedLegacy)) {
+                    parsedLegacy.forEach(dateStr => {
+                        state.shifts[dateStr] = 'worked';
+                    });
+                }
+                saveToLocalStorage(); // Сразу сохраняем в новом формате
+            } catch(e) {}
+        }
     }
 
     // Сохранение данных
     function saveToLocalStorage() {
         localStorage.setItem('duty_shift_rate', state.shiftRate);
-        localStorage.setItem('duty_worked_days', JSON.stringify(state.workedDays));
+        localStorage.setItem('duty_shifts_v2', JSON.stringify(state.shifts));
     }
 
     // Изменение месяца (+1 или -1)
@@ -59,13 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 
-    // Переход к текущей дате ("Сегодня")
+    // Переход к текущей дате
     function gotoToday() {
         state.currentDate = new Date();
         render();
     }
 
-    // Главная функция отрисовки интерфейса
+    // Главная функция отрисовки
     function render() {
         renderCalendar();
         updateStats();
@@ -78,15 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const year = state.currentDate.getFullYear();
         const month = state.currentDate.getMonth();
 
-        // Установка заголовка (например, "Июнь 2026")
         calendarTitle.textContent = state.currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
 
-        // Первый день месяца и общее количество дней
         const firstDayOfMonth = new Date(year, month, 1);
         const lastDayOfMonth = new Date(year, month + 1, 0);
         const totalDays = lastDayOfMonth.getDate();
 
-        // Преобразование дня недели для Пн-Вс структуры
         let startDayOfWeek = firstDayOfMonth.getDay() - 1;
         if (startDayOfWeek === -1) startDayOfWeek = 6;
 
@@ -94,10 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const prevMonthLastDay = new Date(year, month, 0).getDate();
         for (let i = startDayOfWeek - 1; i >= 0; i--) {
             const dayNum = prevMonthLastDay - i;
-            createDayCell(dayNum, true, false);
+            createDayCell(dayNum, true);
         }
 
-        // Рендеринг основных дней месяца
+        // Дни текущего месяца
         const today = new Date();
         for (let day = 1; day <= totalDays; day++) {
             const currentLoopDate = new Date(year, month, day);
@@ -106,21 +119,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const isToday = currentLoopDate.toDateString() === today.toDateString();
             const dayOfWeek = currentLoopDate.getDay();
             const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-            const isWorked = state.workedDays.includes(dateString);
+            
+            // Получаем статус дня из объекта shifts (undefined / 'upcoming' / 'worked')
+            const shiftStatus = state.shifts[dateString];
 
-            createDayCell(day, false, isWorked, isToday, isWeekend, dateString);
+            createDayCell(day, false, shiftStatus, isToday, isWeekend, dateString);
         }
 
-        // Заполнение пустых мест в конце сетки
+        // Пустые места в конце
         const totalRendered = startDayOfWeek + totalDays;
         const remainingSlots = (7 - (totalRendered % 7)) % 7;
         for (let day = 1; day <= remainingSlots; day++) {
-            createDayCell(day, true, false);
+            createDayCell(day, true);
         }
     }
 
-    // Создание DOM-элемента ячейки дня
-    function createDayCell(dayNum, isOtherMonth, isWorked, isToday = false, isWeekend = false, dateString = '') {
+    // Создание DOM-элемента ячейки
+    function createDayCell(dayNum, isOtherMonth, shiftStatus, isToday = false, isWeekend = false, dateString = '') {
         const dayCell = document.createElement('div');
         dayCell.classList.add('calendar-day');
         dayCell.textContent = dayNum;
@@ -130,7 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             if (isWeekend) dayCell.classList.add('weekend');
             if (isToday) dayCell.classList.add('today');
-            if (isWorked) dayCell.classList.add('worked');
+            
+            // Применяем класс в зависимости от статуса (Оранжевый или Зеленый)
+            if (shiftStatus === 'upcoming') dayCell.classList.add('upcoming');
+            if (shiftStatus === 'worked') dayCell.classList.add('worked');
             
             dayCell.dataset.date = dateString;
             dayCell.addEventListener('click', () => toggleDay(dateString));
@@ -139,13 +157,19 @@ document.addEventListener('DOMContentLoaded', () => {
         daysGrid.appendChild(dayCell);
     }
 
-    // Переключение статуса дежурства (выбрано / не выбрано)
+    // Логика переключения статуса дежурства (3 состояния)
     function toggleDay(dateString) {
-        const index = state.workedDays.indexOf(dateString);
-        if (index > -1) {
-            state.workedDays.splice(index, 1);
+        const currentStatus = state.shifts[dateString];
+
+        if (!currentStatus) {
+            // 1 Клик: Нет статуса -> Предстоящая (Оранжевый)
+            state.shifts[dateString] = 'upcoming';
+        } else if (currentStatus === 'upcoming') {
+            // 2 Клик: Предстоящая -> Отработано (Зеленый)
+            state.shifts[dateString] = 'worked';
         } else {
-            state.workedDays.push(dateString);
+            // 3 Клик: Отработано -> Сброс
+            delete state.shifts[dateString];
         }
         
         saveToLocalStorage();
@@ -157,30 +181,45 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentYear = state.currentDate.getFullYear();
         const currentMonth = state.currentDate.getMonth();
 
-        const currentMonthDays = state.workedDays.filter(dateStr => {
+        let countWorked = 0;
+        let countUpcoming = 0;
+        let datesForList = [];
+
+        // Перебираем все даты в словаре
+        for (const [dateStr, status] of Object.entries(state.shifts)) {
             const d = new Date(dateStr);
-            return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-        });
+            if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
+                datesForList.push({ dateStr, status });
+                if (status === 'worked') countWorked++;
+                if (status === 'upcoming') countUpcoming++;
+            }
+        }
 
-        currentMonthDays.sort((a, b) => new Date(a) - new Date(b));
+        // Зарплата считается ТОЛЬКО за отработанные (зеленые) дни
+        const totalEarnings = countWorked * state.shiftRate;
 
-        const countDays = currentMonthDays.length;
-        const totalEarnings = countDays * state.shiftRate;
-
-        statDays.textContent = countDays;
+        statWorked.textContent = countWorked;
+        statUpcoming.textContent = countUpcoming;
         statEarnings.textContent = `${totalEarnings.toLocaleString('ru-RU')} ₽`;
 
+        // Сортировка дат для красивого вывода
+        datesForList.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+
         selectedDatesList.innerHTML = '';
-        if (countDays === 0) {
+        if (datesForList.length === 0) {
             selectedDatesList.innerHTML = '<li style="color: var(--text-muted); justify-content: center;">Дни не выбраны</li>';
         } else {
-            currentMonthDays.forEach(dateStr => {
-                const d = new Date(dateStr);
-                const formatOptions = { day: 'numeric', month: 'long' };
-                const formattedDate = d.toLocaleDateString('ru-RU', formatOptions);
-                
+            datesForList.forEach(item => {
+                const d = new Date(item.dateStr);
+                const formattedDate = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
                 const li = document.createElement('li');
-                li.innerHTML = `<span>${formattedDate}</span> <strong>+ ${state.shiftRate.toLocaleString('ru-RU')} ₽</strong>`;
+                
+                if (item.status === 'upcoming') {
+                    li.innerHTML = `<span>${formattedDate}</span> <span class="list-upcoming">В плане</span>`;
+                } else if (item.status === 'worked') {
+                    li.innerHTML = `<span>${formattedDate}</span> <span class="list-worked">+ ${state.shiftRate.toLocaleString('ru-RU')} ₽</span>`;
+                }
+                
                 selectedDatesList.appendChild(li);
             });
         }

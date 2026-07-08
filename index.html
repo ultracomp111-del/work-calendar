@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>График дежурств</title>
     <link rel="stylesheet" href="style.css" />
-    <link rel="manifest" href="manifest.json" />
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js");
-      }
-    </script>
   </head>
   <body>
     <div class="app-wrapper">
@@ -57,12 +51,17 @@
 
       <footer class="stats-panel">
         <div class="stats-summary">
-          <div class="stats-item">
-            <span class="stats-label">Отработано</span>
-            <span id="stat-days" class="stats-value">0</span>
-            <span class="stats-unit">дней</span>
+          <div class="stats-column">
+            <div class="stats-item">
+              <span class="stats-label">Отработано</span>
+              <div><span id="stat-worked" class="stats-value">0</span> <span class="stats-unit">дней</span></div>
+            </div>
+            <div class="stats-item">
+              <span class="stats-label">В плане</span>
+              <div><span id="stat-upcoming" class="stats-value upcoming-text">0</span> <span class="stats-unit">дней</span></div>
+            </div>
           </div>
-          <div class="stats-item primary">
+          <div class="stats-item primary text-right">
             <span class="stats-label">Заработано</span>
             <span id="stat-earnings" class="stats-value">0 ₽</span>
           </div>
